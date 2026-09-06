@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text to Speech - Reader</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary-color: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #818cf8;
+    --success-color: #10b981;
+    --success-dark: #059669;
+    --warn-color: #f59e0b;
+    --danger-color: #ef4444;
+    --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-bg-color: #ffffff;
+    --text-color: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg-gradient);
+    color: var(--text-color);
+    margin: 0;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 850px;
+    background-color: var(--card-bg-color);
+    border-radius: 16px;
+    box-shadow: var(--shadow-xl);
+    padding: 35px 45px;
+    box-sizing: border-box;
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+h1 {
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 2.5em;
+    letter-spacing: -0.02em;
+}
+.subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin: 0 0 35px;
+    font-weight: 500;
+}
+
+.section {
+    margin-bottom: 35px;
+    padding-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+}
+.section:last-of-type { border-bottom: none; margin-bottom: 10px; padding-bottom: 0; }
+
+h2 {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    letter-spacing: -0.01em;
+}
+
+/* --- Text input --- */
+#text {
+    width: 100%;
+    min-height: 220px;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+    font-family: var(--font-family);
+    font-size: 1em;
+    line-height: 1.7;
+    box-sizing: border-box;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+#text:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+button {
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#convert {
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
+    color: white;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.15em;
+    font-weight: 600;
+    box-shadow: var(--shadow-md);
+    letter-spacing: 0.01em;
+}
+#convert:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+#convert:active:not(:disabled) { transform: translateY(0); box-shadow: var(--shadow-sm); }
+#convert:disabled {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.secondary-btn {
+    padding: 12px 24px;
+    font-size: 1em;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 2px solid var(--primary-color);
+    background-color: white;
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+.secondary-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+.secondary-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+#char-count {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: .9em;
+    font-weight: 500;
+}
+
+/* --- Progress --- */
+#progress-wrap { margin-top: 20px; }
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: .88em;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+}
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 5px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* --- Status --- */
+#status {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+}
+#status[data-kind="ok"]    { border-color: var(--success-color); color: var(--success-dark); }
+#status[data-kind="warn"]  { border-color: var(--warn-color); }
+#status[data-kind="error"] { border-color: var(--danger-color); color: #b91c1c; }
+
+#audio { width: 100%; margin-top: 20px; }
+
+/* --- Summary stats --- */
+#summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+}
+.stat {
+    background: linear-gradient(135deg, #fefefe 0%, #f8fafc 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+.stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.35em;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.stat-label {
+    font-size: .78em;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-top: 4px;
+}
+
+.note {
+    color: var(--text-muted);
+    font-size: .88em;
+    line-height: 1.7;
+}
+code {
+    font-family: var(--font-mono);
+    background: #f1f5f9;
+    padding: .1rem .4rem;
+    border-radius: 4px;
+    font-size: .9em;
+}
+
+/* --- Model loading indicator --- */
+.model-loading-indicator {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 15px 20px;
+    box-shadow: var(--shadow-xl);
+    border: 2px solid var(--primary-color);
+    z-index: 10000;
+    min-width: 280px;
+    animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.model-loading-indicator.loaded { animation: slideOut 0.5s ease forwards; }
+@keyframes slideOut { to { opacity: 0; transform: translateX(-30px); } }
+.model-loading-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.model-loading-spinner {
+    width: 16px; height: 16px;
+    border: 3px solid rgba(99, 102, 241, 0.2);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.model-loading-title { font-weight: 600; color: var(--text-color); font-size: .95em; }
+.model-loading-status {
+    font-size: .85em; color: var(--text-muted);
+    margin-bottom: 8px; font-family: var(--font-mono);
+}
+.hidden { display: none !important; }
+</style>
+</head>
+
+<body>
+<div id="model-loading" class="model-loading-indicator hidden">
+    <div class="model-loading-header">
+        <div class="model-loading-spinner" id="model-spinner"></div>
+        <div class="model-loading-title">Loading models</div>
+    </div>
+    <div class="model-loading-status" id="model-status">Starting…</div>
+    <div class="progress-bar"><div class="progress-fill" id="model-fill"></div></div>
+</div>
+
+<div class="container">
+    <h1>Text to Speech - Reader</h1>
+    <p class="subtitle">Paste a page of text and hear it read aloud — acoustic model (port of Matcha-TTS) and vocoder (port of HiFi) both running on WebGPU (by Daniel Chermetz).</p>
+
+    <div class="section">
+        <h2>Text</h2>
+        <textarea id="text" placeholder="Paste a paragraph, an article, or a chapter here…">Matcha-TTS is a non-autoregressive text to speech model trained with optimal transport conditional flow matching. It produces a mel spectrogram, which a HiFi vocoder then turns into a waveform.
+
+Both models are running in your browser on WebGPU. The text is split into sentences, each sentence is phonemized with eSpeak, and the resulting phonemes are tokenized exactly as the original Python implementation does. Long sentences are split at word boundaries so that every sequence stays within the model's capacity.</textarea>
+        <div class="controls">
+            <button id="convert">Read aloud</button>
+            <button id="cancel" class="secondary-btn" disabled>Stop</button>
+            <button id="download" class="secondary-btn hidden">Download WAV</button>
+            <span id="char-count"></span>
+        </div>
+        <div id="progress-wrap" class="hidden">
+            <div class="progress-label"><span id="progress-text">Working…</span><span id="progress-percent">0%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Result</h2>
+        <p id="status" data-kind="info">Ready. The first run downloads 122 MiB of weights; after that the models stay resident.</p>
+        <audio id="audio" controls class="hidden"></audio>
+        <div id="summary"></div>
+    </div>
+
+    <div class="section">
+        <p class="note">
+            Audio is 22,050 Hz mono 16-bit PCM. Sentences are separated by 200 ms of silence.
+            Sentences longer than 768 tokens are split at a word boundary, and a part whose predicted
+            duration exceeds the model's 1024-frame limit is halved and retried until it fits, with
+            200 ms of silence standing in for anything that still does not.
+            The single-sentence page is at <code>single_sentence.html</code>.
+        </p>
+        <p class="note">
+            See the Github repository for links to the original Matcha-TTS and HiFi vocoder projects (both MIT licensed).
+        </p>
+    </div>
+</div>
+
+<script type="module" src="./web/reader.mjs"></script>
+</body>
+</html>

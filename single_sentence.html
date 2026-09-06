@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matcha-TTS and HiFi vocoder port to WebGPU</title>
+
+<style>
+  :root { color-scheme: dark; --bg:#12141a; --panel:#1a1d26; --line:#2b3040; --text:#e6e9f0; --muted:#98a0b3; --accent:#5eead4; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 2rem 1rem 4rem; background: var(--bg); color: var(--text);
+         font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 60rem; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .sub { color: var(--muted); margin: 0 0 1.75rem; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+  label { display: block; font-weight: 600; margin-bottom: .5rem; }
+  textarea { width: 100%; min-height: 6.5rem; resize: vertical; padding: .75rem .9rem;
+             background: #0e1016; color: var(--text); border: 1px solid var(--line);
+             border-radius: 8px; font: inherit; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; align-items: center; gap: 1rem; margin-top: .85rem; flex-wrap: wrap; }
+  button { background: var(--accent); color: #06231f; border: 0; border-radius: 8px;
+           padding: .6rem 1.15rem; font: inherit; font-weight: 650; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: progress; }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  #token-count { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; }
+  #token-count.over { color: #fca5a5; font-weight: 650; }
+  .hint { color: var(--muted); font-size: .85rem; }
+  #status { margin: 0; padding: .7rem .9rem; border-radius: 8px; background: #0e1016;
+            border: 1px solid var(--line); white-space: pre-wrap; }
+  #status[data-kind="ok"]    { border-color: #14532d; color: #86efac; }
+  #status[data-kind="warn"]  { border-color: #713f12; color: #fde68a; }
+  #status[data-kind="error"] { border-color: #7f1d1d; color: #fca5a5; }
+  #mel { display: none; width: 100%; height: 260px; margin-top: 1rem;
+         border: 1px solid var(--line); border-radius: 8px; background: #000;
+         image-rendering: pixelated; }
+  #audio { width: 100%; margin-top: 1rem; }
+  .detail { display: flex; gap: 1rem; padding: .4rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  .detail:last-child { border-bottom: 0; }
+  .detail .label { flex: 0 0 9.5rem; color: var(--muted); }
+  .detail .value { flex: 1; word-break: break-word; }
+  code { background: #0e1016; padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
+</style>
+</head>
+
+<body>
+<main>
+  <h1>Matcha-TTS and HiFi vocoder port to WebGPU</h1>
+  <p class="sub">Text is phonemized with eSpeak NG, tokenized exactly as Matcha-TTS does, then run through the hand-translated WebGPU kernels — acoustic model and HiFi vocoder — to produce speech.</p>
+
+  <section class="panel">
+    <label for="text">Sentence to synthesize</label>
+    <textarea id="text" placeholder="Type a sentence, then press Synthesize.">Hello world! This sentence is being spoken by a neural vocoder running in your browser.</textarea>
+    <div class="row">
+      <button id="speak">Synthesize</button>
+      <button id="download-wav" class="secondary" hidden>Download WAV</button>
+      <button id="download" class="secondary" hidden>Download mel JSON</button>
+      <span id="token-count"></span>
+    </div>
+    <p class="hint">Limit: 768 tokens (about 383 phonemes). Press <code>Ctrl</code>/<code>Cmd</code> + <code>Enter</code> to run.</p>
+  </section>
+
+  <section class="panel">
+    <p id="status" role="status" data-kind="info">Ready.</p>
+    <audio id="audio" controls hidden></audio>
+    <canvas id="mel" aria-label="Mel spectrogram"></canvas>
+    <div id="details"></div>
+  </section>
+
+  <section class="panel">
+    <p class="hint" style="margin:0">
+      Audio is 22,050 Hz mono 16-bit PCM, generated entirely on the GPU.
+      The mel export uses the <code>matcha-tts-mel-v1</code> format, so
+      <code>run_tts_pipeline.py --matcha-json matcha_mel.json</code> can reproduce the same WAV on CUDA.
+    </p>
+  </section>
+</main>
+
+<script type="module" src="./web/app.mjs"></script>
+</body>
+</html>
